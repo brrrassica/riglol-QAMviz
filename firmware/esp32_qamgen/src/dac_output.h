@@ -9,6 +9,8 @@ struct DacStatus {
   size_t loaded_bytes;
   size_t buf_bytes;
   uint32_t config_hash;
+  uint32_t dma_convert_done_count;
+  uint32_t dma_stop_count;
 };
 
 bool dac_output_init();

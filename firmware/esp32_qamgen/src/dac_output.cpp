@@ -4,6 +4,7 @@
 #include "prbs.h"
 #include "driver/dac_continuous.h"
 #include "esp_chip_info.h"
+#include <Arduino.h>
 #include <string.h>
 
 static dac_continuous_handle_t g_dac = nullptr;
@@ -15,6 +16,26 @@ static uint32_t g_sample_rate = 0;
 static uint32_t g_cfg_hash = 0;
 static char g_last_error[64] = "ok";
 static uint8_t g_buf[2048];
+static volatile uint32_t g_dma_convert_done_count = 0;
+static volatile uint32_t g_dma_stop_count = 0;
+static volatile uint32_t g_frame_pulse_every = 64; // default: 1024-symbol frame / 128-symbol buffer * 8 desc callbacks
+
+static bool IRAM_ATTR on_dac_convert_done(dac_continuous_handle_t, const dac_event_data_t *, void *) {
+  uint32_t n = ++g_dma_convert_done_count;
+  uint32_t every = g_frame_pulse_every;
+  if (every == 0) every = 1;
+  // Best-effort logical frame marker. Callback rate is per DMA descriptor;
+  // every is scaled so pulse targets 1024-symbol frame boundaries.
+  if ((n % every) == 0) {
+    sync_pulse_frame_start_isr();
+  }
+  return false;
+}
+
+static bool IRAM_ATTR on_dac_stop(dac_continuous_handle_t, const dac_event_data_t *, void *) {
+  g_dma_stop_count++;
+  return false;
+}
 
 static void set_err(const char *msg) { strlcpy(g_last_error, msg, sizeof(g_last_error)); }
 
@@ -59,6 +80,15 @@ bool dac_output_start(const QamConfig &cfg) {
 
   g_sample_rate = cfg.symbol_rate * cfg.sps;
   g_cfg_hash = cfg_hash(cfg);
+  g_dma_convert_done_count = 0;
+  g_dma_stop_count = 0;
+  {
+    const uint32_t sps = cfg.sps ? cfg.sps : 8;
+    const uint32_t symbols_per_buf = (uint32_t)((sizeof(g_buf) / 2) / sps);
+    const uint32_t bufs_per_frame = (symbols_per_buf > 0 && (1024 % symbols_per_buf) == 0) ? (1024 / symbols_per_buf) : 1;
+    // on_convert_done fires per DMA descriptor; desc_num=8.
+    g_frame_pulse_every = bufs_per_frame * 8;
+  }
   dac_continuous_config_t dcfg = {};
   dcfg.chan_mask = DAC_CHANNEL_MASK_ALL;
   dcfg.desc_num = 8;
@@ -70,6 +100,18 @@ bool dac_output_start(const QamConfig &cfg) {
 
   esp_err_t e = dac_continuous_new_channels(&dcfg, &g_dac);
   if (e != ESP_OK) { set_err("new_channels failed"); return false; }
+
+  dac_event_callbacks_t cbs = {};
+  cbs.on_convert_done = on_dac_convert_done;
+  cbs.on_stop = on_dac_stop;
+  e = dac_continuous_register_event_callback(g_dac, &cbs, nullptr);
+  if (e != ESP_OK) {
+    set_err("register_event_callback failed");
+    dac_continuous_del_channels(g_dac);
+    g_dac = nullptr;
+    return false;
+  }
+
   e = dac_continuous_enable(g_dac);
   if (e != ESP_OK) { set_err("enable failed"); dac_continuous_del_channels(g_dac); g_dac=nullptr; return false; }
   g_loaded = 0;
@@ -99,6 +141,8 @@ DacStatus dac_output_status() {
   s.loaded_bytes = g_loaded;
   s.buf_bytes = g_buf_bytes;
   s.config_hash = g_cfg_hash;
+  s.dma_convert_done_count = g_dma_convert_done_count;
+  s.dma_stop_count = g_dma_stop_count;
   return s;
 }
 

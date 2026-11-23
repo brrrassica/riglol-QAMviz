@@ -1,0 +1,24 @@
+{
+  "milestone": "M1-closeout",
+  "type": "smoke-test",
+  "date_utc": "2026-11-23",
+  "firmware": "firmware/esp32_qamgen",
+  "board": {
+    "port": "/dev/ttyUSB0",
+    "chip_model": 1,
+    "revision": 100,
+    "cores": 2
+  },
+  "result": "pass",
+  "observations": [
+    "compile/upload pass on ESP32 ECO1 rev100",
+    "status reports dma_done incrementing and dma_stop==0",
+    "selftest passes: 16-QAM/64-QAM known vectors + PRBS7 first nibbles 020C",
+    "qam64 configure/restart applies; config_hash changes; dma counters reset then increment",
+    "frame sync: start/restart pulse + best-effort 1024-symbol DMA callback pulse (descriptor-granularity scaled)"
+  ],
+  "pending": [
+    "Rigol analog X-Y constellation validation",
+    "measured symbol-rate/linearity on scope"
+  ]
+}

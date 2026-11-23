@@ -58,16 +58,35 @@ IqCode symbol_to_codes(const QamConfig &cfg, uint16_t symbolIndex, Prbs7 &prbs) 
 }
 
 bool qam_selftest(char *out, size_t outLen) {
-  // Known 16-QAM: bits 0000 => I gray 00=-3, Q gray 00=-3
-  IqCode c0 = qam16_map(0x0, 0.8f);
-  IqCode cf = qam16_map(0xF, 0.8f); // 11,11 => +3,+3
-  bool ok = (c0.i < 128 && c0.q < 128 && cf.i > 128 && cf.q > 128 && c0.i == c0.q && cf.i == cf.q);
-  // PRBS7 sanity: first bit sequence from seed 0x7f should be deterministic
+  // 16-QAM known vectors: 00,00 => -3,-3; 11,11 => +3,+3
+  IqCode c16_00 = qam16_map(0x0, 0.8f);
+  IqCode c16_ff = qam16_map(0xF, 0.8f);
+  bool ok16 = (c16_00.i < 128 && c16_00.q < 128 && c16_ff.i > 128 && c16_ff.q > 128 &&
+               c16_00.i == c16_00.q && c16_ff.i == c16_ff.q);
+
+  // 64-QAM known vectors: 000,000 => -7,-7; 111,111 => +7,+7 (Gray mapping)
+  IqCode c64_00 = qam64_map(0x00, 0.8f);
+  IqCode c64_3f = qam64_map(0x3F, 0.8f);
+  bool ok64 = (c64_00.i < 128 && c64_00.q < 128 && c64_3f.i > 128 && c64_3f.q > 128 &&
+               c64_00.i == c64_00.q && c64_3f.i == c64_3f.q);
+
+  // PRBS7 deterministic first-N check (seed 0x7f).
   Prbs7 p(0x7f);
-  uint8_t b1 = p.nextBits(4);
+  uint8_t s1 = p.nextBits(4);
+  uint8_t s2 = p.nextBits(4);
+  uint8_t s3 = p.nextBits(4);
+  uint8_t s4 = p.nextBits(4);
   Prbs7 p2(0x7f);
-  uint8_t b2 = p2.nextBits(4);
-  ok = ok && (b1 == b2);
-  snprintf(out, outLen, "qam16_00=%u,%u qam16_ff=%u,%u prbs=%u ok=%s", c0.i, c0.q, cf.i, cf.q, b1, ok ? "true" : "false");
+  bool ok_prbs = (s1 == p2.nextBits(4)) && (s2 == p2.nextBits(4)) &&
+                 (s3 == p2.nextBits(4)) && (s4 == p2.nextBits(4));
+  // Known expected first 4 nibbles from this PRBS7 implementation/seed 0x7f.
+  bool ok_prbs_known = (s1 == 0x0 && s2 == 0x2 && s3 == 0x0 && s4 == 0xC);
+
+  bool ok = ok16 && ok64 && ok_prbs && ok_prbs_known;
+  snprintf(out, outLen,
+           "q16_00=%u,%u q16_ff=%u,%u q64_00=%u,%u q64_3f=%u,%u prbs=%X%X%X%X ok=%s",
+           c16_00.i, c16_00.q, c16_ff.i, c16_ff.q,
+           c64_00.i, c64_00.q, c64_3f.i, c64_3f.q,
+           s1, s2, s3, s4, ok ? "true" : "false");
   return ok;
 }

@@ -1,0 +1,58 @@
+# Firmware bench — esp32_qamgen (M1 closeout)
+
+Date: 2026-11-23  
+Firmware: `firmware/esp32_qamgen`  
+Board: ESP32-D0WDQ6, ECO1 `esp_chip_info_t.revision==100`, `/dev/ttyUSB0` (CP210x `10c4:ea60`)
+
+## Build / flash
+
+- `arduino-cli compile --fqbn esp32:esp32:esp32 firmware/esp32_qamgen` — **pass**
+- Sketch: 295344 bytes (22%) program, 24428 bytes (7%) dynamic memory
+- `arduino-cli upload -p /dev/ttyUSB0 --fqbn esp32:esp32:esp32 ...` — **pass**
+
+## Smoke test (USB CDC JSON, 115200)
+
+Observed after upload/reset:
+
+```json
+{"ok":true,"cmd":"status","streaming":true,"symbol_rate":20000,"sps":8,"sample_rate":160000,"gain":0.800,"modulation":"qam16","shape":"rect","seed":42,"frames":1,"loaded":1920,"buf_bytes":2048,"config_hash":"ad370bbd","dma_done":6841,"dma_stop":0,"uptime_s":5.38,"last_error":"ok"}
+```
+
+Second status ~1.4s later: `dma_done=8712` (incrementing), `dma_stop=0`.
+
+Selftest:
+
+```json
+{"ok":true,"cmd":"selftest","detail":"q16_00=32,32 q16_ff=160,160 q64_00=18,18 q64_3f=175,175 prbs=020C ok=true"}
+```
+
+64-QAM configure/restart:
+
+```json
+{"ok":true,"cmd":"configure","msg":"pending config stored; apply with start/restart"}
+{"ok":true,"cmd":"status","streaming":true,"symbol_rate":20000,"sps":8,"sample_rate":160000,"gain":0.800,"modulation":"qam64","shape":"rect","seed":42,"frames":2,"loaded":1920,"buf_bytes":2048,"config_hash":"bfda8ad2","dma_done":0,"dma_stop":0,"uptime_s":7.99,"last_error":"ok"}
+```
+
+Post-restart status: `dma_done` incrementing, `dma_stop=0`.
+
+## What this verifies
+
+- ECO1 rev 100 guard passes on target hardware.
+- Dual-DAC cyclic DMA starts with `DAC_CHANNEL_MASK_ALL`, `DAC_CHANNEL_MODE_ALTER`, `freq_hz=160000` (per-channel), `loaded=1920/2048`.
+- 16-QAM and 64-QAM configure/restart paths work; `config_hash` changes with config.
+- PRBS7 deterministic first-4 nibbles for seed 0x7f: `0,2,0,C`.
+- 16-QAM and 64-QAM known mapper vectors pass selftest.
+- DMA convert-done callback fires (heartbeat counter increments); no DMA stop events observed.
+
+## Frame sync (M1 closeout)
+
+- GPIO27 pulse on start/restart (`sync_pulse_frame_start`).
+- Best-effort logical 1024-symbol frame pulse from DAC continuous `on_convert_done` ISR callback. Callback granularity is per DMA descriptor (`desc_num=8`); pulse interval is scaled by `bufs_per_frame * desc_num`.
+- **Limitation**: cyclic DMA has no sample-exact frame-boundary interrupt tied to symbol index inside the loop; pulse is phase-aligned to DMA descriptor callbacks, not a guaranteed DAC sample edge. Validate phase/alignment on scope before using as a hard trigger.
+
+## Pending / not verified in this pass
+
+- Rigol DS1054Z analog X-Y constellation validation (16 compact clusters at 20 kbaud / 8 sps) — **blocked, Rigol not connected on USB**.
+- Measured symbol rate within 1% on analog capture — **pending**.
+- DAC level linearity/endpoints with scope/DMM — **pending** (prior M0 probe measured 159,968–160,864 sample/s per DAC).
+- RRC shaping, underrun stress test, long-run stability.
