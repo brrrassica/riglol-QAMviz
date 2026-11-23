@@ -1,6 +1,6 @@
 # riglol-QAMviz
 
-ESP32 dual-DAC QAM constellation lab using a Rigol DS1054Z oscilloscope, NanoVNA, and [omariglol](https://github.com/omariglol/omariglol).
+ESP32 dual-DAC QAM constellation lab using a Rigol DS1054Z oscilloscope, NanoVNA, and [omariglol](https://github.com/brrrassica/omariglol).
 
 ## Overview
 
@@ -27,7 +27,7 @@ The signals are viewed on a Rigol DS1054Z in X-Y mode as a constellation. The la
 
 ## Hardware
 
-- **ESP32-D0WDQ6 ECO1 / v1.0** (`esp_chip_info_t.revision == 100`) - exercise is ECO1-only.
+- **ESP32, Chip Rev >= 1.0** (`esp_chip_info_t.revision >= 100`) - firmware currently guards for rev 100.
 - **Rigol DS1054Z** - USBTMC, `1AB1:04CE`.
 - **NanoVNA-H USBFix** - USBTMC/SCPI image, planned for VNA/RF stations.
 - **Linux host** - `arduino-cli`, ESP32 Arduino core 3.3.12, `riglol`.

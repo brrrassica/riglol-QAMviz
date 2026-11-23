@@ -1,6 +1,6 @@
 # riglol-QAMviz
 
-ESP32 dual-DAC QAM constellation lab using a Rigol DS1054Z oscilloscope, NanoVNA, and [omariglol](https://github.com/omariglol/omariglol) for instrumentation.
+ESP32 dual-DAC QAM constellation lab using a Rigol DS1054Z oscilloscope, NanoVNA, and [omariglol](https://github.com/brrrassica/omariglol) for instrumentation.
 
 This repo contains the firmware and bench evidence for generating **16-QAM, 64-QAM, and 256-QAM** baseband I/Q signals on an ESP32's two internal 8-bit DACs (GPIO25 = I, GPIO26 = Q) and viewing them on a Rigol DS1054Z in X-Y mode.
 
@@ -22,12 +22,12 @@ This repo contains the firmware and bench evidence for generating **16-QAM, 64-Q
 
 | Item | Details |
 |---|---|
-| ESP32 | ESP32-D0WDQ6, ECO1 / v1.0, `esp_chip_info_t.revision == 100`, CP210x USB-UART |
+| ESP32 | ESP32 with Chip Rev >= 1.0 (`esp_chip_info_t.revision >= 100`), internal 8-bit DACs, USB-UART |
 | Scope | Rigol DS1054Z (or compatible DS1000Z), USBTMC `1AB1:04CE` |
 | VNA | NanoVNA-H with NanoVNAUSBFix USBTMC/SCPI image, `0483:5740` (planned) |
 | Host | Linux, `arduino-cli` + ESP32 core 3.3.12, `omariglol`/`riglol` |
 
-The exercise is fixed to **ECO1/v1.0** ESP32 silicon. Firmware refuses to run if `esp_chip_info_t.revision != 100`.
+The firmware expects ESP32 **Chip Rev >= 1.0** (`esp_chip_info_t.revision >= 100`). Current sketches guard for revision `100`; adjust the guard only if you have validated another compatible revision.
 
 ## Wiring
 

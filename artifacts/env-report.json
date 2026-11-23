@@ -1,15 +1,26 @@
 {
   "recorded_utc": "2026-11-23",
   "exercise": {
-    "name": "Dual-DAC sine bring-up",
-    "chip_revision_scope": "ECO1 only (esp_chip_info_t.revision == 100 / v1.0)"
+    "name": "M0 bench readiness / dual-DAC QAM bring-up",
+    "chip_revision_scope": "ESP32 Chip Rev >= 1.0 (firmware currently guards esp_chip_info_t.revision == 100)"
+  },
+  "status": {
+    "m0_complete": false,
+    "release_gate_blocked": true,
+    "release_gate": "Tagged omariglol release containing f1cb86f is required before M0 can be marked complete; v0.1.9 is investigation-only."
+  },
+  "omariglol": {
+    "local_path": "~/projects/omariglol",
+    "version_observed": "v0.1.9 (investigation-only)",
+    "f1cb86f_release_tag": null,
+    "notes": "Do not pin to an untagged branch. Rebuild/record when a tagged release containing f1cb86f is available."
   },
   "esp32": {
     "port": "/dev/ttyUSB0",
     "usb_id": "10c4:ea60",
     "model": 1,
     "esp_chip_info_revision": 100,
-    "revision_label": "ECO1 / v1.0",
+    "revision_label": "Chip Rev >= 1.0 (v1.0 observed)",
     "cores": 2,
     "mac": "<esp32-mac>"
   },
@@ -23,37 +34,18 @@
     "write_cyclically_loaded_bytes": 1920,
     "write_cyclically_input_bytes": 2048,
     "measured_per_dac_sample_rate": 160000,
-    "waveform": "sine",
-    "sine_frequency_hz": 2500,
-    "sine_period_samples": 64,
-    "amplitude_code": 100,
-    "midscale_code": 128,
-    "firmware": "firmware/dac-sine/dac-sine.ino"
+    "notes": "In ALTER mode, freq_hz is per-channel. Treat loaded byte count as authoritative. ADC2 self-readback on DAC pins is not valid evidence."
   },
   "rigol": {
     "identity": "RIGOL TECHNOLOGIES,DS1054Z,<serial>,<firmware>",
     "usb_id": "1ab1:04ce",
     "serial": "<scope-serial>",
     "firmware": "<scope-firmware>",
-    "auto_setup_command": ":AUT",
-    "post_autoscale": {
-      "ch1_scale_v_per_div": 1.0,
-      "ch2_scale_v_per_div": 1.0,
-      "timebase_s_per_div": 0.0001,
-      "sample_rate_sa_per_s": 500000000,
-      "trigger_source": "CHAN1",
-      "trigger_status": "TD"
-    },
-    "measurements": {
-      "ch1_frequency_hz": 2544.529,
-      "ch2_frequency_hz": 2538.071,
-      "ch1_vpp_v": 2.68,
-      "ch2_vpp_v": 2.68,
-      "nominal_frequency_hz": 2500
-    },
-    "captures": [
-      "/tmp/opencode/rigol-sine/CHAN1.npy",
-      "/tmp/opencode/rigol-sine/CHAN2.npy"
-    ]
+    "notes": "Use :DISP:TYPE DOTS, :DISP:CLE, brief :RUN, then :STOP for crisp X-Y captures. :AUT can leave acquisition stopped; follow with :RUN."
+  },
+  "nanovna": {
+    "usb_id": "0483:5740",
+    "status": "not verified in this pass",
+    "notes": "NanoVNAUSBFix USBTMC/SCPI image expected; verify with *IDN? when attached."
   }
 }
