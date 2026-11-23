@@ -9,6 +9,9 @@ class CaptureConfig:
     sps: int = 8
     modulation: str = "qam16"
     symbol_rate: int = 20000
+    seed: int = 42
+    mode: str = "norm"
+    shape: str = "rect"
 
 PRESETS = {
     "lab16qam": CaptureConfig(preset="lab16qam", modulation="qam16", symbol_rate=20000, sps=8),
