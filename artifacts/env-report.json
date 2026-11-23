@@ -1,0 +1,59 @@
+{
+  "recorded_utc": "2026-11-23",
+  "exercise": {
+    "name": "Dual-DAC sine bring-up",
+    "chip_revision_scope": "ECO1 only (esp_chip_info_t.revision == 100 / v1.0)"
+  },
+  "esp32": {
+    "port": "/dev/ttyUSB0",
+    "usb_id": "10c4:ea60",
+    "model": 1,
+    "esp_chip_info_revision": 100,
+    "revision_label": "ECO1 / v1.0",
+    "cores": 2,
+    "mac": "3c:71:bf:4d:b2:b0"
+  },
+  "dac": {
+    "api": "driver/dac_continuous.h",
+    "channels": "DAC_CHANNEL_MASK_ALL (GPIO25=I, GPIO26=Q)",
+    "mode": "DAC_CHANNEL_MODE_ALTER",
+    "freq_hz": 160000,
+    "desc_num": 8,
+    "buf_size": 512,
+    "write_cyclically_loaded_bytes": 1920,
+    "write_cyclically_input_bytes": 2048,
+    "measured_per_dac_sample_rate": 160000,
+    "waveform": "sine",
+    "sine_frequency_hz": 2500,
+    "sine_period_samples": 64,
+    "amplitude_code": 100,
+    "midscale_code": 128,
+    "firmware": "firmware/dac-sine/dac-sine.ino"
+  },
+  "rigol": {
+    "identity": "RIGOL TECHNOLOGIES,DS1054Z,DS1ZA203012565,00.04.04.SP4",
+    "usb_id": "1ab1:04ce",
+    "serial": "DS1ZA203012565",
+    "firmware": "00.04.04.SP4",
+    "auto_setup_command": ":AUT",
+    "post_autoscale": {
+      "ch1_scale_v_per_div": 1.0,
+      "ch2_scale_v_per_div": 1.0,
+      "timebase_s_per_div": 0.0001,
+      "sample_rate_sa_per_s": 500000000,
+      "trigger_source": "CHAN1",
+      "trigger_status": "TD"
+    },
+    "measurements": {
+      "ch1_frequency_hz": 2544.529,
+      "ch2_frequency_hz": 2538.071,
+      "ch1_vpp_v": 2.68,
+      "ch2_vpp_v": 2.68,
+      "nominal_frequency_hz": 2500
+    },
+    "captures": [
+      "/tmp/opencode/rigol-sine/CHAN1.npy",
+      "/tmp/opencode/rigol-sine/CHAN2.npy"
+    ]
+  }
+}
