@@ -1,0 +1,20 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "qamviz"
+version = "0.0.1"
+description = "Host capture and analysis tools for riglol-QAMviz"
+requires-python = ">=3.10"
+dependencies = [
+  "numpy",
+  "matplotlib",
+]
+
+[project.scripts]
+qamviz = "qamviz.cli:main"
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["qamviz*"]
