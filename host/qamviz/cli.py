@@ -99,7 +99,7 @@ def cmd_capture(args):
     plot_iq_time(t, z, out / "iq-time.png")
     syms, sync_info = sync_and_sample(z, sps=preset.sps, modulation=preset.modulation, seed=preset.seed, shape=preset.shape)
     metrics, sym_aligned, _ref = compute_evm(syms, ideal=ideal_for(preset.modulation), modulation=preset.modulation)
-    if sync_info.get("sync") == "training_corr":
+    if sync_info.get("sync") in ("training_corr", "sequence_corr"):
         ser = symbol_error_count(sym_aligned, modulation=preset.modulation, seed=preset.seed,
                                  frame_pos0_at=sync_info.get("frame_pos0_at", 0))
         ser["ser_valid"] = True

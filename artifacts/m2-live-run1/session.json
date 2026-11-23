@@ -1,0 +1,107 @@
+{
+  "artifacts": {
+    "ch1": "ch1.npy",
+    "ch2": "ch2.npy",
+    "constellation": "constellation.png",
+    "iq_time": "iq-time.png"
+  },
+  "captures": [
+    {
+      "mode": "norm",
+      "path": "/tmp/opencode/qamviz-live-run/ch1.npy",
+      "rc": 0,
+      "source": "CHAN1",
+      "stderr": "",
+      "stdout": "wrote /tmp/opencode/qamviz-live-run/ch1.npy (1200 points from 1 chunk(s), WORD format, NORM mode)"
+    },
+    {
+      "mode": "norm",
+      "path": "/tmp/opencode/qamviz-live-run/ch2.npy",
+      "rc": 0,
+      "source": "CHAN2",
+      "stderr": "",
+      "stdout": "wrote /tmp/opencode/qamviz-live-run/ch2.npy (1200 points from 1 chunk(s), WORD format, NORM mode)"
+    }
+  ],
+  "config": {
+    "mode": "norm",
+    "modulation": "qam16",
+    "points": 1200,
+    "preset": "lab16qam",
+    "resource": "usb:0x1AB1:0x04CE",
+    "seed": 42,
+    "shape": "rect",
+    "sps": 8,
+    "symbol_rate": 20000
+  },
+  "config_hash": "sha256:c3046ee41d70d16df724de0a699648b88fcdc7cdc6cedf629dd185dd66768656",
+  "created_utc": "2026-11-23T13:53:05.256803+00:00",
+  "esp32": {
+    "ok": true,
+    "port": "/dev/ttyUSB0",
+    "status": {
+      "buf_bytes": 2048,
+      "cmd": "status",
+      "config_hash": "ad370bbd",
+      "dma_done": 15,
+      "dma_stop": 0,
+      "frames": 1,
+      "gain": 0.8,
+      "last_error": "ok",
+      "loaded": 1920,
+      "modulation": "qam16",
+      "ok": true,
+      "sample_rate": 160000,
+      "seed": 42,
+      "shape": "rect",
+      "sps": 8,
+      "streaming": true,
+      "symbol_rate": 20000,
+      "uptime_s": 0.27
+    }
+  },
+  "git_head": "593080260f7044b2e778ede256f43889766cdd9c",
+  "metrics": {
+    "evm_percent": 24.39843361772562,
+    "mean_mag_err": 0.13712807134913726,
+    "mean_phase_err_deg": 12.320749565709676,
+    "n": 150,
+    "ser_reason": "blind_sync",
+    "ser_valid": false,
+    "snr_db_est": 12.252761090441634,
+    "symbol_error_rate": null,
+    "symbol_errors": null,
+    "symbol_total": 150
+  },
+  "preflight": {
+    "checks": [
+      {
+        "detail": "/home/sam/projects/omariglol/bin/riglol",
+        "name": "riglol_bin",
+        "ok": true
+      },
+      {
+        "name": "usb_list",
+        "ok": true,
+        "rc": 0,
+        "stderr": ""
+      },
+      {
+        "detail": "usb:0x1AB1:0x04CE",
+        "name": "resource_visible",
+        "ok": true
+      }
+    ],
+    "ok": true,
+    "resource": "usb:0x1AB1:0x04CE",
+    "riglol": "/home/sam/projects/omariglol/bin/riglol"
+  },
+  "resource": "usb:0x1AB1:0x04CE",
+  "schema": "qamviz.session/0.2",
+  "status": "ok",
+  "sync": {
+    "corr_score": 0.1909512736310037,
+    "offset_samples": null,
+    "sync": "blind"
+  }
+}

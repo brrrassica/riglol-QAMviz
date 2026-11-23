@@ -50,9 +50,15 @@ Post-restart status: `dma_done` incrementing, `dma_stop=0`.
 - Best-effort logical 1024-symbol frame pulse from DAC continuous `on_convert_done` ISR callback. Callback granularity is per DMA descriptor (`desc_num=8`); pulse interval is scaled by `bufs_per_frame * desc_num`.
 - **Limitation**: cyclic DMA has no sample-exact frame-boundary interrupt tied to symbol index inside the loop; pulse is phase-aligned to DMA descriptor callbacks, not a guaranteed DAC sample edge. Validate phase/alignment on scope before using as a hard trigger.
 
-## Pending / not verified in this pass
+## Live analog validation (2026-11-23, Rigol DS1054Z DS1ZA203012565)
 
-- Rigol DS1054Z analog X-Y constellation validation (16 compact clusters at 20 kbaud / 8 sps) — **blocked, Rigol not connected on USB**.
-- Measured symbol rate within 1% on analog capture — **pending**.
-- DAC level linearity/endpoints with scope/DMM — **pending** (prior M0 probe measured 159,968–160,864 sample/s per DAC).
-- RRC shaping, underrun stress test, long-run stability.
+- Scope IDN: `RIGOL TECHNOLOGIES,DS1054Z,DS1ZA203012565,00.04.04.SP4`
+- X-Y capture: `artifacts/m1-analog/xy-dots.png` (DOTS, XY mode, CH1/CH2 offsets set to -1.65V for centering, then scope restored to MAIN/VECT with original offsets). Visual cluster count/compactness should be confirmed by operator from screenshot.
+- Live M2 capture (`artifacts/m2-live-run1/session.json`): `qam16 20k/8sps/160kS/s seed=42`, preflight ok, ESP32 status ok. Metrics: `EVM 24.40%`, `SNR_est 12.25 dB`, `n=150`, `sync=blind` (sequence corr score 0.383 < 0.6; SER invalid). This confirms end-to-end analog capture path, but EVM/sync quality needs improvement.
+
+## Pending / not verified
+
+- Operator confirmation of 16 compact clusters in `artifacts/m1-analog/xy-dots.png`.
+- Measured symbol rate within 1% on analog capture (firmware/DMA reports 160kS/s; scope-side symbol-rate measurement not recorded).
+- DAC level linearity/endpoints with scope/DMM.
+- RRC analog validation, underrun stress test, long-run stability.

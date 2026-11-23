@@ -67,46 +67,52 @@ def sample_symbols(z: np.ndarray, sps: int = 8, modulation: str = "qam16", shape
 
 
 def sync_and_sample(z: np.ndarray, sps: int = 8, modulation: str = "qam16", seed: int = 42, shape: str = "rect"):
-    """Try training-sequence correlation; fall back to blind symbol sampling.
+    """Try TX-sequence correlation; fall back to blind symbol sampling.
 
-    Returns (symbols, info) where info describes sync method and confidence.
+    Searches a 32-symbol window over the full 1024-symbol generated TX sequence,
+    so alignment works even when the training burst is not in the capture.
     """
     zf = matched_filter(z, sps=sps, shape=shape)
     ideal = ideal_for(modulation)
-    train = training_sequence(modulation, 32)
-    train_n = _normalize(train, ideal)
-    best = {"score": -1e18, "offset": 0, "start": 0, "method": "blind"}
+    tx = generate_symbols(modulation=modulation, seed=seed, n_symbols=1024)
+    win_len = 32
+    best = {"score": -1e18, "offset": 0, "start": 0, "frame_pos": 0, "method": "blind"}
 
     for off in range(max(1, sps)):
         sym = zf[off::sps]
-        if len(sym) < len(train_n) + 4:
+        if len(sym) < win_len + 4:
             continue
         symn = _normalize(sym, ideal)
         symn, _ = _best_phase(symn, ideal)
-        for start in range(0, len(symn) - len(train_n) + 1):
-            win = symn[start:start + len(train_n)]
-            denom = (np.linalg.norm(win) * np.linalg.norm(train_n) + 1e-12)
-            score = float(np.real(np.vdot(win, train_n)) / denom)
-            if score > best["score"]:
-                best = {"score": score, "offset": off, "start": start, "method": "training_corr"}
+        for start in range(0, len(symn) - win_len + 1):
+            win = symn[start:start + win_len]
+            denom = (np.linalg.norm(win) + 1e-12)
+            # Search all possible frame positions for this window.
+            for frame_pos in range(1024):
+                tpl = tx[np.arange(frame_pos, frame_pos + win_len) % 1024]
+                tpl_n = tpl / (np.linalg.norm(tpl) + 1e-12)
+                score = float(np.real(np.vdot(win / denom, tpl_n)))
+                if score > best["score"]:
+                    best = {"score": score, "offset": off, "start": start, "frame_pos": frame_pos, "method": "sequence_corr"}
 
-    use_training = best["method"] == "training_corr" and best["score"] > 0.6
-    if use_training:
-        off, start = best["offset"], best["start"]
+    if best["method"] == "sequence_corr" and best["score"] > 0.6:
+        off, start, frame_pos = best["offset"], best["start"], best["frame_pos"]
         sym = zf[off::sps]
         symn = _normalize(sym, ideal)
         symn, _ = _best_phase(symn, ideal)
         sym_out = symn[start:]
         info = {
-            "sync": "training_corr",
+            "sync": "sequence_corr",
             "offset_samples": int(off),
-            "training_start_symbol": int(start),
+            "symbol_start": int(start),
+            "frame_pos_at_start": int(frame_pos),
             "corr_score": float(best["score"]),
-            "frame_pos0_at": int(start),
+            # frame_pos0_at is index in sym_out where frame_pos==0.
+            "frame_pos0_at": int((-frame_pos) % 1024),
         }
         return sym_out, info
 
-    sym_out = sample_symbols(zf, sps=sps, modulation=modulation, shape="rect")  # already filtered
+    sym_out = sample_symbols(zf, sps=sps, modulation=modulation, shape="rect")
     return sym_out, {"sync": "blind", "offset_samples": None, "corr_score": float(best["score"])}
 
 
