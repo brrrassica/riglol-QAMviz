@@ -57,17 +57,95 @@ bool dac_output_init() {
   return true;
 }
 
+static float rrc_tap(float t, float beta) {
+  if (fabsf(t) < 1e-6f) return 1.0f - beta + (4.0f * beta / (float)M_PI);
+  if (beta > 0.0f && fabsf(fabsf(4.0f * beta * t) - 1.0f) < 1e-6f) {
+    return (beta / sqrtf(2.0f)) * ((1.0f + 2.0f / (float)M_PI) * sinf((float)M_PI / (4.0f * beta)) +
+                                   (1.0f - 2.0f / (float)M_PI) * cosf((float)M_PI / (4.0f * beta)));
+  }
+  float num = sinf((float)M_PI * t * (1.0f - beta)) + 4.0f * beta * t * cosf((float)M_PI * t * (1.0f + beta));
+  float den = (float)M_PI * t * (1.0f - powf(4.0f * beta * t, 2.0f));
+  return num / den;
+}
+
 static bool build_buffer(const QamConfig &cfg) {
   const uint32_t sps = cfg.sps ? cfg.sps : 8;
   const size_t symbols = (sizeof(g_buf) / 2) / sps;
   g_buf_bytes = symbols * sps * 2;
+  const bool is_rrc = strcmp(cfg.shape, "rrc") == 0;
+
+  // Precompute symbol normalized I/Q.
+  float symI[256];
+  float symQ[256];
+  const size_t maxSym = symbols < 256 ? symbols : 256;
   Prbs7 prbs((uint8_t)(cfg.seed ? (cfg.seed & 0x7F) : 0x7F));
-  for (size_t s = 0; s < symbols; ++s) {
+  for (size_t s = 0; s < maxSym; ++s) {
     IqCode c = symbol_to_codes(cfg, (uint16_t)s, prbs);
+    // Convert DAC code back to normalized-ish float around 0 for shaping, then re-map.
+    symI[s] = ((float)c.i - 128.0f) / (127.0f * cfg.gain);
+    symQ[s] = ((float)c.q - 128.0f) / (127.0f * cfg.gain);
+  }
+
+  if (!is_rrc) {
+    for (size_t s = 0; s < maxSym; ++s) {
+      // Rectangular: use original DAC codes for exact mapping.
+      // Recompute to avoid float round-trip drift.
+    }
+  }
+
+  if (!is_rrc) {
+    // Rectangular path (original behavior).
+    Prbs7 prbs2((uint8_t)(cfg.seed ? (cfg.seed & 0x7F) : 0x7F));
+    for (size_t s = 0; s < symbols; ++s) {
+      IqCode c = symbol_to_codes(cfg, (uint16_t)s, prbs2);
+      for (uint32_t k = 0; k < sps; ++k) {
+        size_t idx = (s * sps + k) * 2;
+        g_buf[idx + 0] = c.i;
+        g_buf[idx + 1] = c.q;
+      }
+    }
+    return true;
+  }
+
+  // RRC shaping (scaffold): periodic convolution over cyclic symbol buffer.
+  const float beta = 0.35f;
+  const int span = 4; // symbols on each side
+  // Build taps per sample offset.
+  float taps[9 * 16]; // max span 4, sps 16
+  const int tapLen = (2 * span + 1) * (int)sps;
+  if (tapLen > (int)(sizeof(taps) / sizeof(taps[0]))) {
+    set_err("rrc tap buffer too small");
+    return false;
+  }
+  for (int i = 0; i < tapLen; ++i) {
+    int k = i - span * (int)sps;
+    float t = (float)k / (float)sps;
+    taps[i] = rrc_tap(t, beta);
+  }
+  // Normalize tap energy.
+  float e = 0.0f;
+  for (int i = 0; i < tapLen; ++i) e += taps[i] * taps[i];
+  float norm = sqrtf(e > 0 ? e : 1.0f);
+  for (int i = 0; i < tapLen; ++i) taps[i] /= norm;
+
+  for (size_t s = 0; s < maxSym; ++s) {
     for (uint32_t k = 0; k < sps; ++k) {
+      float yi = 0.0f, yq = 0.0f;
+      for (int m = -span; m <= span; ++m) {
+        int ss = (int)s - m;
+        while (ss < 0) ss += (int)maxSym;
+        ss %= (int)maxSym;
+        float tap = taps[(m + span) * (int)sps + k];
+        yi += symI[ss] * tap;
+        yq += symQ[ss] * tap;
+      }
+      float vi = 128.0f + 127.0f * cfg.gain * yi;
+      float vq = 128.0f + 127.0f * cfg.gain * yq;
+      if (vi < 0) vi = 0; if (vi > 255) vi = 255;
+      if (vq < 0) vq = 0; if (vq > 255) vq = 255;
       size_t idx = (s * sps + k) * 2;
-      g_buf[idx + 0] = c.i;
-      g_buf[idx + 1] = c.q;
+      g_buf[idx + 0] = (uint8_t)lroundf(vi);
+      g_buf[idx + 1] = (uint8_t)lroundf(vq);
     }
   }
   return true;

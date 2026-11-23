@@ -1,0 +1,20 @@
+{
+  "milestone": "M5-rrc-scaffold",
+  "type": "smoke-test",
+  "date_utc": "2026-11-23",
+  "firmware": "firmware/esp32_qamgen",
+  "board": {
+    "port": "/dev/ttyUSB0",
+    "revision": 100
+  },
+  "result": "pass",
+  "observations": [
+    "compile/upload pass with RRC scaffold",
+    "configure shape=rrc + restart applied; status reported shape=rrc, new config_hash, dma_done incrementing, dma_stop==0"
+  ],
+  "pending": [
+    "RRC waveform correctness validation on scope",
+    "host matched-filter alignment against firmware RRC output",
+    "EVM comparison rect vs rrc"
+  ]
+}

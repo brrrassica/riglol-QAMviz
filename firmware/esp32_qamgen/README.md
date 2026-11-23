@@ -10,7 +10,8 @@ M1 closeout pass. Core MVP features compile/upload/smoke-test on ESP32 ECO1 rev 
 
 - **ECO1 guard**: refuses to run if `esp_chip_info_t.revision != 100`.
 - **DAC output**: `driver/dac_continuous.h`, `DAC_CHANNEL_MASK_ALL`, `DAC_CHANNEL_MODE_ALTER`, cyclic DMA, `desc_num=8`, `buf_size=512`.
-- **Modulations**: 16-QAM and 64-QAM (Gray-coded), rectangular shaping.
+- **Modulations**: 16-QAM and 64-QAM (Gray-coded).
+- **Pulse shaping**: rectangular default; RRC `beta=0.35` scaffold (`shape="rrc"`, periodic convolution over cyclic buffer; analog validation pending).
 - **Default preset**: 16-QAM, 20 kbaud, 8 sps, 160 kS/s per DAC, gain 0.8, seed 42.
 - **PRBS7**: deterministic data-bit source seeded by config (seed 0x7f first nibbles: `0,2,0,C`).
 - **Training burst**: deterministic 32-symbol training pattern every 1024 symbols.
