@@ -11,7 +11,7 @@
     "esp_chip_info_revision": 100,
     "revision_label": "ECO1 / v1.0",
     "cores": 2,
-    "mac": "3c:71:bf:4d:b2:b0"
+    "mac": "<esp32-mac>"
   },
   "dac": {
     "api": "driver/dac_continuous.h",
@@ -31,10 +31,10 @@
     "firmware": "firmware/dac-sine/dac-sine.ino"
   },
   "rigol": {
-    "identity": "RIGOL TECHNOLOGIES,DS1054Z,DS1ZA203012565,00.04.04.SP4",
+    "identity": "RIGOL TECHNOLOGIES,DS1054Z,<serial>,<firmware>",
     "usb_id": "1ab1:04ce",
-    "serial": "DS1ZA203012565",
-    "firmware": "00.04.04.SP4",
+    "serial": "<scope-serial>",
+    "firmware": "<scope-firmware>",
     "auto_setup_command": ":AUT",
     "post_autoscale": {
       "ch1_scale_v_per_div": 1.0,

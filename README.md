@@ -23,7 +23,7 @@ This repo contains the firmware and bench evidence for generating **16-QAM, 64-Q
 | Item | Details |
 |---|---|
 | ESP32 | ESP32-D0WDQ6, ECO1 / v1.0, `esp_chip_info_t.revision == 100`, CP210x USB-UART |
-| Scope | Rigol DS1054Z, `DS1ZA203012565`, FW `00.04.04.SP4`, USBTMC `1AB1:04CE` |
+| Scope | Rigol DS1054Z (or compatible DS1000Z), USBTMC `1AB1:04CE` |
 | VNA | NanoVNA-H with NanoVNAUSBFix USBTMC/SCPI image, `0483:5740` (planned) |
 | Host | Linux, `arduino-cli` + ESP32 core 3.3.12, `omariglol`/`riglol` |
 
