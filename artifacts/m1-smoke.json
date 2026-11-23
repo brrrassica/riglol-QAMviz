@@ -1,0 +1,20 @@
+{
+  "milestone": "M1",
+  "type": "smoke-test",
+  "date_utc": "2026-11-23",
+  "firmware": "firmware/esp32_qamgen",
+  "board": {
+    "port": "/dev/ttyUSB0",
+    "chip_model": 1,
+    "revision": 100,
+    "cores": 2
+  },
+  "result": "pass",
+  "observations": [
+    "boot reported rev 100",
+    "autostart 16-QAM 20kbaud 8sps 160kS/s loaded 1920/2048",
+    "status command returned streaming state",
+    "configure stored pending config",
+    "restart applied gain=0.7 seed=7 and incremented frames"
+  ]
+}
