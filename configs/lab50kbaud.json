@@ -1,0 +1,12 @@
+{
+  "name": "lab50kbaud",
+  "description": "Stretch 16-QAM rectangular preset at 50 kbaud (8 sps = 400 kS/s per DAC). Requires hardware validation for DAC DMA/EVM limits.",
+  "modulation": "qam16",
+  "symbol_rate": 50000,
+  "sps": 8,
+  "sample_rate": 400000,
+  "gain": 0.8,
+  "shape": "rect",
+  "seed": 42,
+  "status": "stretch"
+}

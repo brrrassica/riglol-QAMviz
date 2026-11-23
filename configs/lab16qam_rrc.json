@@ -1,0 +1,13 @@
+{
+  "name": "lab16qam_rrc",
+  "description": "16-QAM with RRC pulse shape (beta=0.35). Host has matched-filter scaffold; firmware RRC shaping is not yet implemented - treat as planned preset.",
+  "modulation": "qam16",
+  "symbol_rate": 20000,
+  "sps": 8,
+  "sample_rate": 160000,
+  "gain": 0.8,
+  "shape": "rrc",
+  "rrc_beta": 0.35,
+  "seed": 42,
+  "status": "scaffold"
+}
