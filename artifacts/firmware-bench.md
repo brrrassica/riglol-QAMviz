@@ -65,6 +65,12 @@ Post-restart status: `dma_done` incrementing, `dma_stop=0`.
 - "Function Limited!" toast appears if `:ACQ:MODE` is changed while in X-Y; set `:ACQ:MODE SAMple` before `:TIM:MODE XY`. Channel offsets can reset when leaving/entering X-Y — re-verify `:CHANn:OFFS` after mode switches.
 - `riglol screenshot --usb` reliably produces corrupted PNG IDAT streams on this unit/FW; use `:DISP:DATA?` (IEEE BMP block) instead.
 
+## Supply noise characterization (2026-11-23, live scope, Measure-All)
+
+- 5V VBUS (CH1, AC, 10X): Vpp 1.0–1.2 V, Vrms ~423–489 mV; 3V3 rail (CH2, AC, 10X): Vpp 868 mV, Vrms ~303 mV. Both show a dominant **50.0 kHz** switching-ripple component (scope counter; npy FFT agrees within alias limits, `artifacts/m1-analog/supply/`).
+- ESP32 DAC output tracks VDD3P3 as reference, so ~0.87 Vpp of 3V3 ripple directly scales/moves the constellation (~±0.29 V on a ~1.5 Vpp signal). This is consistent with the X-Y comet smear and the 24% EVM on live captures.
+- Verdict: current supply **will** create problems. Mitigation order: different USB port/cable or powered hub → bulk 470 µF + 10 µF/100 nF at 3V3/VIN → external clean 5 V into the 5V pin. Re-measure rails and re-run X-Y/EVM after mitigation.
+
 ## Pending / not verified in this pass
 
 - Operator confirmation of 16 compact clusters in `artifacts/m1-analog/xy-dots.png` — structure visible but comet-smeared (see X-Y display quality findings above).

@@ -1,0 +1,34 @@
+{
+  "date_utc": "2026-11-23",
+  "setup": {
+    "ch1": "5V VBUS (devkit USB)",
+    "ch2": "3V3 rail",
+    "coupling": "AC",
+    "probe": "10X",
+    "timebase_div": "1ms",
+    "vdiv": [
+      "200mV",
+      "100mV"
+    ]
+  },
+  "measure_all": {
+    "vbus_5v": {
+      "vpp": 1.2,
+      "vrms": 0.423,
+      "freq_khz": 50.0
+    },
+    "rail_3v3": {
+      "vpp": 0.868,
+      "vrms": 0.303,
+      "freq_khz": 50.0
+    }
+  },
+  "npy_note": "1200 points over 12ms (effective 100kS/s, aliased FFT); dominant 50kHz component confirmed by scope Measure-All counter",
+  "verdict": "50 kHz switching ripple, 0.87Vpp on 3V3 directly modulates ESP32 DAC full-scale (reference=VDD3P3); explains X-Y comet smear and high EVM (24%)",
+  "recommendations": [
+    "Try different USB port/cable or powered hub; avoid unregulated cheap hubs",
+    "Add bulk 470uF electrolytic + 10uF/100nF ceramics at devkit 3V3 and VIN",
+    "Optionally feed 5V via clean external supply into 5V pin",
+    "Re-measure rails and re-run X-Y/EVM after mitigation"
+  ]
+}
