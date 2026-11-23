@@ -5,11 +5,16 @@ import matplotlib
 matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 
-IDEAL_16QAM = np.array([complex(i, q) for i in [-3,-1,1,3] for q in [-3,-1,1,3]]) / np.sqrt(10)
+IDEAL_16QAM = np.array([complex(i, q) for i in [-3, -1, 1, 3] for q in [-3, -1, 1, 3]]) / np.sqrt(10)
+IDEAL_64QAM = np.array([complex(i, q) for i in [-7,-5,-3,-1,1,3,5,7] for q in [-7,-5,-3,-1,1,3,5,7]]) / np.sqrt(42)
 
-def plot_constellation(symbols: np.ndarray, out_png: str | Path, title: str = "Constellation"):
+def _ideal_for(modulation: str):
+    return IDEAL_64QAM if str(modulation).lower() == "qam64" else IDEAL_16QAM
+
+def plot_constellation(symbols: np.ndarray, out_png: str | Path, title: str = "Constellation", modulation: str = "qam16"):
+    ideal = _ideal_for(modulation)
     plt.figure(figsize=(6, 6))
-    plt.scatter(np.real(IDEAL_16QAM), np.imag(IDEAL_16QAM), marker='x', s=60, label='ideal')
+    plt.scatter(np.real(ideal), np.imag(ideal), marker='x', s=60, label='ideal')
     if len(symbols):
         plt.scatter(np.real(symbols), np.imag(symbols), s=8, alpha=0.4, label='rx')
     plt.gca().set_aspect('equal')

@@ -1,37 +1,65 @@
 from __future__ import annotations
-import argparse, json, os
+import argparse, json, subprocess
 from pathlib import Path
 from .instruments.scope_rigol import doctor as scope_doctor, capture_channel, riglol
-from .analysis import load_iq, sample_symbols, compute_evm
+from .analysis import load_iq, sample_symbols, compute_evm, ideal_for
 from .plots import plot_constellation, plot_iq_time
-from .session import write_manifest, now_utc
+from .session import write_manifest, now_utc, sha256_text
+from .config import get_preset, to_dict
 
 DEFAULT_RESOURCE = "usb:0x1AB1:0x04CE"
 
+def _git_head():
+    try:
+        p = subprocess.run(["git", "rev-parse", "HEAD"], capture_output=True, text=True, timeout=5)
+        return p.stdout.strip() if p.returncode == 0 else None
+    except Exception:
+        return None
+
 def cmd_doctor(args):
     info = scope_doctor(args.resource)
+    info["git_head"] = _git_head()
     print(json.dumps(info, indent=2))
     return 0 if info.get("usb_list_rc", 1) == 0 else 1
 
 def _pre_capture(resource: str):
-    # Ensure YT mode for waveform capture; ignore errors.
     for c in [":TIM:MODE MAIN", ":RUN"]:
         riglol("scpi", "--usb", "--timeout", "10", resource, c, timeout=15)
 
+def _maybe_esp32_status(port: str | None):
+    if not port:
+        return None
+    try:
+        from .esp32_link import Esp32Link
+        with Esp32Link(port=port) as link:
+            st = link.status()
+            return {"port": port, "ok": st.ok, "status": st.raw}
+    except Exception as e:
+        return {"port": port, "ok": False, "error": str(e)}
+
 def cmd_capture(args):
+    preset = get_preset(args.preset)
+    if args.sps:
+        preset.sps = args.sps
+    if args.points:
+        preset.points = args.points
+    preset.resource = args.resource
     out = Path(args.out)
     out.mkdir(parents=True, exist_ok=True)
     _pre_capture(args.resource)
     ch1 = out / "ch1.npy"
     ch2 = out / "ch2.npy"
-    c1 = capture_channel(args.resource, "CHAN1", ch1, points=args.points)
-    c2 = capture_channel(args.resource, "CHAN2", ch2, points=args.points)
+    c1 = capture_channel(args.resource, "CHAN1", ch1, points=preset.points)
+    c2 = capture_channel(args.resource, "CHAN2", ch2, points=preset.points)
     manifest = {
-        "schema": "qamviz.session/0",
+        "schema": "qamviz.session/0.1",
         "created_utc": now_utc(),
+        "git_head": _git_head(),
         "resource": args.resource,
+        "config": to_dict(preset),
+        "config_hash": sha256_text(json.dumps(to_dict(preset), sort_keys=True)),
+        "esp32": _maybe_esp32_status(args.esp32_port),
         "captures": [c1, c2],
-        "config": {"points": args.points, "sps": args.sps, "preset": args.preset},
     }
     if c1["rc"] != 0 or c2["rc"] != 0:
         manifest["status"] = "capture_failed"
@@ -40,14 +68,11 @@ def cmd_capture(args):
         return 1
     t, z = load_iq(str(ch1), str(ch2))
     plot_iq_time(t, z, out / "iq-time.png")
-    syms = sample_symbols(z, sps=args.sps)
-    metrics, sym_aligned, _ref = compute_evm(syms)
-    plot_constellation(sym_aligned, out / "constellation.png", title=f"Constellation EVM={metrics['evm_percent']:.2f}% n={metrics['n']}")
+    syms = sample_symbols(z, sps=preset.sps, modulation=preset.modulation)
+    metrics, sym_aligned, _ref = compute_evm(syms, ideal=ideal_for(preset.modulation))
+    plot_constellation(sym_aligned, out / "constellation.png", title=f"{preset.modulation} EVM={metrics['evm_percent']:.2f}% n={metrics['n']}", modulation=preset.modulation)
     manifest["metrics"] = metrics
-    manifest["artifacts"] = {
-        "ch1": "ch1.npy", "ch2": "ch2.npy",
-        "iq_time": "iq-time.png", "constellation": "constellation.png",
-    }
+    manifest["artifacts"] = {"ch1": "ch1.npy", "ch2": "ch2.npy", "iq_time": "iq-time.png", "constellation": "constellation.png"}
     manifest["status"] = "ok"
     p = write_manifest(out, manifest)
     print(json.dumps({"ok": True, "out": str(out), "manifest": str(p), "metrics": metrics}, indent=2))
@@ -66,6 +91,7 @@ def main(argv=None):
     c.add_argument("--points", type=int, default=1200)
     c.add_argument("--sps", type=int, default=8)
     c.add_argument("--preset", default="lab16qam")
+    c.add_argument("--esp32-port", default=None)
     c.set_defaults(func=cmd_capture)
 
     args = ap.parse_args(argv)
