@@ -25,6 +25,26 @@ def doctor(resource: str | None = None) -> dict:
     return info
 
 
+def preflight_capture(resource: str) -> dict:
+    """Read-only preflight checks before capture. Does not modify instrument state."""
+    out = {"resource": resource, "ok": True, "checks": []}
+    bin_path = _riglol_bin()
+    out["riglol"] = bin_path
+    if not Path(bin_path).exists() and shutil.which(bin_path) is None:
+        out["ok"] = False
+        out["checks"].append({"name": "riglol_bin", "ok": False, "detail": f"not found: {bin_path}"})
+        return out
+    out["checks"].append({"name": "riglol_bin", "ok": True, "detail": bin_path})
+
+    p = riglol("usb", "list", "--json", timeout=20)
+    out["checks"].append({"name": "usb_list", "ok": p.returncode == 0, "rc": p.returncode, "stderr": p.stderr.strip()})
+    found = resource in p.stdout
+    out["checks"].append({"name": "resource_visible", "ok": found, "detail": resource})
+    if not found:
+        out["ok"] = False
+    return out
+
+
 def capture_channel(resource: str, source: str, out_npy: Path, points: int = 1200, mode: str = "norm") -> dict:
     """Capture a scope channel to .npy via riglol.
 

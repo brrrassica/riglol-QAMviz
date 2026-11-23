@@ -1,7 +1,7 @@
 from __future__ import annotations
 import argparse, json, subprocess
 from pathlib import Path
-from .instruments.scope_rigol import doctor as scope_doctor, capture_channel, riglol
+from .instruments.scope_rigol import doctor as scope_doctor, capture_channel, riglol, preflight_capture
 from .analysis import load_iq, sync_and_sample, compute_evm, ideal_for, symbol_error_count
 from .plots import plot_constellation, plot_iq_time
 from .session import write_manifest, now_utc, sha256_text
@@ -58,6 +58,21 @@ def cmd_capture(args):
 
     out = Path(args.out)
     out.mkdir(parents=True, exist_ok=True)
+    pre = preflight_capture(args.resource)
+    if not pre.get("ok") and not args.force:
+        manifest = {
+            "schema": "qamviz.session/0.2",
+            "created_utc": now_utc(),
+            "git_head": _git_head(),
+            "resource": args.resource,
+            "config": to_dict(preset),
+            "config_hash": sha256_text(json.dumps(to_dict(preset), sort_keys=True)),
+            "preflight": pre,
+            "status": "preflight_failed",
+        }
+        write_manifest(out, manifest)
+        print(json.dumps(manifest, indent=2))
+        return 2
     _pre_capture(args.resource)
     ch1 = out / "ch1.npy"
     ch2 = out / "ch2.npy"
@@ -70,6 +85,7 @@ def cmd_capture(args):
         "resource": args.resource,
         "config": to_dict(preset),
         "config_hash": sha256_text(json.dumps(to_dict(preset), sort_keys=True)),
+        "preflight": pre,
         "esp32": _maybe_esp32_status(args.esp32_port),
         "captures": [c1, c2],
     }
@@ -126,6 +142,7 @@ def main(argv=None):
     c.add_argument("--seed", type=int, default=None)
     c.add_argument("--mode", default="norm", choices=["norm", "raw"], help="Rigol capture mode (raw is scaffold; requires scope)")
     c.add_argument("--shape", default="rect", choices=["rect", "rrc"], help="Pulse shape assumption for matched filtering")
+    c.add_argument("--force", action="store_true", help="Attempt capture even if preflight fails")
     c.set_defaults(func=cmd_capture)
 
     l = sub.add_parser("live", help="Run live dashboard scaffold (M6 partial)")
