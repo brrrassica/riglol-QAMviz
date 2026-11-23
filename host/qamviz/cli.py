@@ -104,8 +104,8 @@ def cmd_capture(args):
 
 def cmd_live(args):
     from .dashboard.server import run as run_dashboard
-    print(json.dumps({"ok": True, "dashboard": True, "host": args.host, "port": args.port, "preset": args.preset, "note": "M6 scaffold: serves dashboard UI; live instrument streaming not yet wired"}))
-    run_dashboard(host=args.host, port=args.port)
+    print(json.dumps({"ok": True, "dashboard": True, "host": args.host, "port": args.port, "preset": args.preset, "demo": bool(args.demo), "note": "M6 scaffold: serves dashboard UI; live instrument streaming not yet wired"}))
+    run_dashboard(host=args.host, port=args.port, demo=bool(args.demo))
     return 0
 
 
@@ -133,6 +133,7 @@ def main(argv=None):
     l.add_argument("--host", default="127.0.0.1")
     l.add_argument("--port", type=int, default=8765)
     l.add_argument("--dashboard", action="store_true", help="Accepted for CLI compatibility; dashboard is served by default")
+    l.add_argument("--demo", action="store_true", help="Publish synthetic frames (no instruments required)")
     l.set_defaults(func=cmd_live)
 
     args = ap.parse_args(argv)
