@@ -12,9 +12,18 @@ dependencies = [
   "matplotlib",
 ]
 
+[project.optional-dependencies]
+dashboard = [
+  "fastapi",
+  "uvicorn[standard]",
+]
+
 [project.scripts]
 qamviz = "qamviz.cli:main"
 
 [tool.setuptools.packages.find]
 where = ["."]
 include = ["qamviz*"]
+
+[tool.setuptools.package-data]
+"qamviz.dashboard" = ["static/*"]

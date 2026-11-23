@@ -102,6 +102,13 @@ def cmd_capture(args):
     return 0
 
 
+def cmd_live(args):
+    from .dashboard.server import run as run_dashboard
+    print(json.dumps({"ok": True, "dashboard": True, "host": args.host, "port": args.port, "preset": args.preset, "note": "M6 scaffold: serves dashboard UI; live instrument streaming not yet wired"}))
+    run_dashboard(host=args.host, port=args.port)
+    return 0
+
+
 def main(argv=None):
     ap = argparse.ArgumentParser(prog="qamviz")
     sub = ap.add_subparsers(dest="cmd", required=True)
@@ -120,6 +127,13 @@ def main(argv=None):
     c.add_argument("--mode", default="norm", choices=["norm", "raw"], help="Rigol capture mode (raw is scaffold; requires scope)")
     c.add_argument("--shape", default="rect", choices=["rect", "rrc"], help="Pulse shape assumption for matched filtering")
     c.set_defaults(func=cmd_capture)
+
+    l = sub.add_parser("live", help="Run live dashboard scaffold (M6 partial)")
+    l.add_argument("--preset", default="lab16qam")
+    l.add_argument("--host", default="127.0.0.1")
+    l.add_argument("--port", type=int, default=8765)
+    l.add_argument("--dashboard", action="store_true", help="Accepted for CLI compatibility; dashboard is served by default")
+    l.set_defaults(func=cmd_live)
 
     args = ap.parse_args(argv)
     return args.func(args)

@@ -1,0 +1,49 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>riglol-QAMviz dashboard</title>
+  <style>
+    body { font-family: system-ui, sans-serif; margin: 0; background: #111; color: #eee; }
+    header { padding: 12px 16px; background: #1b1b1b; border-bottom: 1px solid #333; display:flex; gap:16px; align-items:center; }
+    .status { font-size: 12px; color: #aaa; }
+    .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; padding: 12px; }
+    .pane { background: #181818; border: 1px solid #333; border-radius: 8px; padding: 10px; min-height: 280px; }
+    h2 { margin: 0 0 8px; font-size: 14px; color: #ddd; }
+    canvas { width: 100%; height: 240px; background: #0d0d0d; border-radius: 4px; display:block; }
+    pre { margin:0; font-size: 12px; white-space: pre-wrap; color:#bbb; }
+    .metric { font-size: 13px; color: #9cf; margin-bottom: 6px; }
+  </style>
+</head>
+<body>
+  <header>
+    <strong>riglol-QAMviz</strong>
+    <span id="conn" class="status">disconnected</span>
+    <span id="ts" class="status"></span>
+  </header>
+  <div class="grid">
+    <section class="pane">
+      <h2>Constellation / EVM</h2>
+      <div id="evm" class="metric">EVM: —</div>
+      <canvas id="constellation" width="600" height="480"></canvas>
+    </section>
+    <section class="pane">
+      <h2>I/Q / Eye (scaffold)</h2>
+      <div id="iqmeta" class="metric">samples: —</div>
+      <canvas id="iq" width="600" height="480"></canvas>
+    </section>
+    <section class="pane">
+      <h2>VNA / S21</h2>
+      <div id="vnameta" class="metric">sweep: —</div>
+      <canvas id="vna" width="600" height="480"></canvas>
+    </section>
+    <section class="pane">
+      <h2>omariglol evidence</h2>
+      <div id="measuremeta" class="metric">parallelism: —</div>
+      <pre id="measure">waiting for measure frames...</pre>
+    </section>
+  </div>
+  <script src="/static/qamviz.js"></script>
+</body>
+</html>
