@@ -1,8 +1,10 @@
 #include "dac_output.h"
 #include "qam_mapper.h"
 #include "sync.h"
+#include "prbs.h"
 #include "driver/dac_continuous.h"
 #include "esp_chip_info.h"
+#include <string.h>
 
 static dac_continuous_handle_t g_dac = nullptr;
 static bool g_streaming = false;
@@ -10,10 +12,18 @@ static uint32_t g_frames = 0;
 static size_t g_loaded = 0;
 static size_t g_buf_bytes = 0;
 static uint32_t g_sample_rate = 0;
+static uint32_t g_cfg_hash = 0;
 static char g_last_error[64] = "ok";
 static uint8_t g_buf[2048];
 
 static void set_err(const char *msg) { strlcpy(g_last_error, msg, sizeof(g_last_error)); }
+
+static uint32_t cfg_hash(const QamConfig &cfg) {
+  uint32_t h = 2166136261u;
+  const uint8_t *p = (const uint8_t *)&cfg;
+  for (size_t i = 0; i < sizeof(QamConfig); ++i) { h ^= p[i]; h *= 16777619u; }
+  return h;
+}
 
 bool dac_output_init() {
   esp_chip_info_t info;
@@ -30,10 +40,9 @@ static bool build_buffer(const QamConfig &cfg) {
   const uint32_t sps = cfg.sps ? cfg.sps : 8;
   const size_t symbols = (sizeof(g_buf) / 2) / sps;
   g_buf_bytes = symbols * sps * 2;
-  uint32_t prng = cfg.seed ? cfg.seed : 42;
-  uint8_t trainingPhase = 0;
+  Prbs7 prbs((uint8_t)(cfg.seed ? (cfg.seed & 0x7F) : 0x7F));
   for (size_t s = 0; s < symbols; ++s) {
-    IqCode c = symbol_to_codes(cfg, (uint16_t)s, prng, trainingPhase);
+    IqCode c = symbol_to_codes(cfg, (uint16_t)s, prbs);
     for (uint32_t k = 0; k < sps; ++k) {
       size_t idx = (s * sps + k) * 2;
       g_buf[idx + 0] = c.i;
@@ -49,6 +58,7 @@ bool dac_output_start(const QamConfig &cfg) {
   if (!build_buffer(cfg)) { set_err("buffer build failed"); return false; }
 
   g_sample_rate = cfg.symbol_rate * cfg.sps;
+  g_cfg_hash = cfg_hash(cfg);
   dac_continuous_config_t dcfg = {};
   dcfg.chan_mask = DAC_CHANNEL_MASK_ALL;
   dcfg.desc_num = 8;
@@ -88,6 +98,7 @@ DacStatus dac_output_status() {
   s.frames_emitted = g_frames;
   s.loaded_bytes = g_loaded;
   s.buf_bytes = g_buf_bytes;
+  s.config_hash = g_cfg_hash;
   return s;
 }
 

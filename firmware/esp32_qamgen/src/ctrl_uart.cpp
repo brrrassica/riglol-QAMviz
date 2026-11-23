@@ -1,5 +1,6 @@
 #include "ctrl_uart.h"
 #include "dac_output.h"
+#include "qam_mapper.h"
 #include <stdlib.h>
 
 static String g_line;
@@ -49,10 +50,10 @@ static bool json_get_float(const String &s, const char *key, float &out) {
 
 static void emit_status(const QamConfig &cfg) {
   DacStatus st = dac_output_status();
-  Serial.printf("{\"ok\":true,\"cmd\":\"status\",\"streaming\":%s,\"symbol_rate\":%u,\"sps\":%u,\"sample_rate\":%u,\"gain\":%.3f,\"modulation\":\"%s\",\"shape\":\"%s\",\"seed\":%u,\"frames\":%u,\"loaded\":%u,\"buf_bytes\":%u,\"uptime_s\":%.2f,\"last_error\":\"%s\"}\n",
+  Serial.printf("{\"ok\":true,\"cmd\":\"status\",\"streaming\":%s,\"symbol_rate\":%u,\"sps\":%u,\"sample_rate\":%u,\"gain\":%.3f,\"modulation\":\"%s\",\"shape\":\"%s\",\"seed\":%u,\"frames\":%u,\"loaded\":%u,\"buf_bytes\":%u,\"config_hash\":\"%08x\",\"uptime_s\":%.2f,\"last_error\":\"%s\"}\n",
                 st.streaming ? "true" : "false", cfg.symbol_rate, cfg.sps, st.sample_rate, cfg.gain,
                 cfg.modulation, cfg.shape, cfg.seed, st.frames_emitted, (unsigned)st.loaded_bytes,
-                (unsigned)st.buf_bytes, millis() / 1000.0, dac_output_last_error());
+                (unsigned)st.buf_bytes, (unsigned)st.config_hash, millis() / 1000.0, dac_output_last_error());
 }
 
 static void emit_ok(const char *cmd, const char *msg = "ok") {
@@ -105,6 +106,10 @@ void ctrl_uart_poll(QamConfig &active, QamConfig &pending, bool &pendingValid) {
         else emit_err("restart", dac_output_last_error());
       } else if (strcmp(cmd, "status") == 0) {
         emit_status(active);
+      } else if (strcmp(cmd, "selftest") == 0) {
+        char buf[160];
+        bool ok = qam_selftest(buf, sizeof(buf));
+        Serial.printf("{\"ok\":%s,\"cmd\":\"selftest\",\"detail\":\"%s\"}\n", ok ? "true" : "false", buf);
       } else {
         emit_err(cmd, "unknown cmd");
       }

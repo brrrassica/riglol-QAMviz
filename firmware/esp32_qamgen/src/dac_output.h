@@ -8,6 +8,7 @@ struct DacStatus {
   uint32_t frames_emitted;
   size_t loaded_bytes;
   size_t buf_bytes;
+  uint32_t config_hash;
 };
 
 bool dac_output_init();

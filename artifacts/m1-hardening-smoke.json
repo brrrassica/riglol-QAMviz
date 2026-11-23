@@ -1,0 +1,20 @@
+{
+  "milestone": "M1-hardening",
+  "type": "smoke-test",
+  "date_utc": "2026-11-23",
+  "firmware": "firmware/esp32_qamgen",
+  "board": {
+    "port": "/dev/ttyUSB0",
+    "chip_model": 1,
+    "revision": 100,
+    "cores": 2
+  },
+  "result": "pass",
+  "observations": [
+    "boot reported rev 100",
+    "autostart 16-QAM 20kbaud 8sps 160kS/s loaded 1920/2048",
+    "status included config_hash",
+    "selftest command passed (mapper + PRBS determinism)",
+    "configure qam64 + restart applied; status reported qam64 with different config_hash"
+  ]
+}
