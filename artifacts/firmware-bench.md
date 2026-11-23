@@ -56,9 +56,18 @@ Post-restart status: `dma_done` incrementing, `dma_stop=0`.
 - X-Y capture: `artifacts/m1-analog/xy-dots.png` (DOTS, XY mode, CH1/CH2 offsets set to -1.65V for centering, then scope restored to MAIN/VECT with original offsets). Visual cluster count/compactness should be confirmed by operator from screenshot.
 - Live M2 capture (`artifacts/m2-live-run1/session.json`): `qam16 20k/8sps/160kS/s seed=42`, preflight ok, ESP32 status ok. Metrics: `EVM 24.40%`, `SNR_est 12.25 dB`, `n=150`, `sync=blind` (sequence corr score 0.383 < 0.6; SER invalid). This confirms end-to-end analog capture path, but EVM/sync quality needs improvement.
 
-## Pending / not verified
+## X-Y display quality findings (2026-11-23, live scope)
 
-- Operator confirmation of 16 compact clusters in `artifacts/m1-analog/xy-dots.png`.
+- 16-QAM structure (4x4 rows/clusters) is visible in X-Y, but each cluster shows a comet-trail smear with a consistent drift direction; shortening the paint window (2 s → 0.15 s) does not remove it, so it is not slow thermal drift of the whole frame.
+- YT inspection (20 µs/div, 500 mV/div) shows clean flat symbol levels with overshoot/ringing at each transition — edge ringing, not level instability.
+- Suspected smear causes, to check in order: (1) probe compensation / long ground leads (ringing at edges smears dots), (2) USB VBus ripple on ESP32 3V3 reference (moves both DAC axes coherently — matches diagonal comet direction), (3) DS1054Z X-Y raster scan skew while painting.
+- `:DISP:TYPE DOTS` is honored in X-Y but transition traces are still drawn; DS1054Z X-Y has no way to suppress inter-sample vectors.
+- "Function Limited!" toast appears if `:ACQ:MODE` is changed while in X-Y; set `:ACQ:MODE SAMple` before `:TIM:MODE XY`. Channel offsets can reset when leaving/entering X-Y — re-verify `:CHANn:OFFS` after mode switches.
+- `riglol screenshot --usb` reliably produces corrupted PNG IDAT streams on this unit/FW; use `:DISP:DATA?` (IEEE BMP block) instead.
+
+## Pending / not verified in this pass
+
+- Operator confirmation of 16 compact clusters in `artifacts/m1-analog/xy-dots.png` — structure visible but comet-smeared (see X-Y display quality findings above).
 - Measured symbol rate within 1% on analog capture (firmware/DMA reports 160kS/s; scope-side symbol-rate measurement not recorded).
 - DAC level linearity/endpoints with scope/DMM.
 - RRC analog validation, underrun stress test, long-run stability.
