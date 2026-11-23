@@ -11,8 +11,10 @@ static dac_continuous_handle_t dac = nullptr;
 
 static const uint32_t SAMPLE_RATE_HZ = 160000; // per DAC, ALTER mode
 static const size_t   SPS            = 8;      // samples per symbol
-static const size_t   BUF_BYTES      = 2048;   // interleaved I/Q bytes
-static const size_t   SYMBOLS        = (BUF_BYTES / 2) / SPS;
+// 256 unique symbols, padded so write_cyclically's partial load still covers all 256.
+static const size_t   SYMBOLS        = 256;
+static const size_t   PAD_SYMBOLS    = 256;
+static const size_t   BUF_BYTES      = (SYMBOLS + PAD_SYMBOLS) * SPS * 2;
 
 // 256-QAM: 16 PAM levels {-15,-13,...,+15}, spacing 8 codes => 8..248.
 static const int LEVEL_SPACING = 8;
@@ -62,7 +64,7 @@ void setup() {
   dac_continuous_config_t cfg = {};
   cfg.chan_mask  = DAC_CHANNEL_MASK_ALL;
   cfg.desc_num   = 8;
-  cfg.buf_size   = 512;
+  cfg.buf_size   = 1024;
   cfg.freq_hz    = SAMPLE_RATE_HZ;
   cfg.offset     = 0;
   cfg.clk_src    = DAC_DIGI_CLK_SRC_DEFAULT;
@@ -82,9 +84,9 @@ void setup() {
   if (e != ESP_OK) return;
 
   static uint8_t buf[BUF_BYTES];
-  uint16_t lfsr = 0xACE1;
-  for (size_t s = 0; s < SYMBOLS; ++s) {
-    const uint8_t bits = prng_byte(&lfsr);
+  for (size_t s = 0; s < SYMBOLS + PAD_SYMBOLS; ++s) {
+    // Iterate all 256 symbol values so every constellation point appears once per cycle.
+    const uint8_t bits = (uint8_t)(s % SYMBOLS);
     uint8_t icode = 0, qcode = 0;
     gray256qam(bits, &icode, &qcode);
     for (size_t k = 0; k < SPS; ++k) {
