@@ -15,6 +15,9 @@ fi
 
 echo "== riglol-QAMviz doctor =="
 echo "date: $(date -u +%Y-%m-%dT%H:%M:%SZ)"
+if command -v git >/dev/null 2>&1; then
+  echo "git_head: $(git rev-parse --short HEAD 2>/dev/null || echo unknown)"
+fi
 echo
 
 echo "== USB devices (lsusb) =="
@@ -34,6 +37,19 @@ if [[ -n "$RIGLOL_BIN" ]]; then
   "$RIGLOL_BIN" usb list --json || true
 else
   echo "riglol not found; set RIGLOL_BIN=/path/to/riglol"
+fi
+echo
+
+echo "== Host toolchain =="
+if command -v arduino-cli >/dev/null 2>&1; then
+  arduino-cli version 2>&1 | tail -1 || true
+  arduino-cli core list 2>&1 | grep -E 'esp32:esp32|ID' || true
+else
+  echo "arduino-cli not found"
+fi
+if [[ -x "/tmp/opencode/qamviz-venv/bin/python" ]]; then
+  /tmp/opencode/qamviz-venv/bin/python --version 2>&1 || true
+  /tmp/opencode/qamviz-venv/bin/python -c "import numpy,matplotlib,serial,fastapi,uvicorn; print('qamviz venv deps: ok')" 2>&1 || true
 fi
 echo
 
