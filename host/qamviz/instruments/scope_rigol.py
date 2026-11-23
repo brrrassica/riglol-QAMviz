@@ -25,6 +25,17 @@ def doctor(resource: str | None = None) -> dict:
     return info
 
 
+def _resource_ids(resource: str):
+    # Accept forms like usb:0x1AB1:0x04CE or usb:1ab1:04ce
+    parts = resource.lower().replace("0x", "").split(":")
+    if len(parts) >= 3 and parts[0] == "usb":
+        try:
+            return int(parts[1], 16), int(parts[2], 16)
+        except Exception:
+            return None
+    return None
+
+
 def preflight_capture(resource: str) -> dict:
     """Read-only preflight checks before capture. Does not modify instrument state."""
     out = {"resource": resource, "ok": True, "checks": []}
@@ -39,6 +50,15 @@ def preflight_capture(resource: str) -> dict:
     p = riglol("usb", "list", "--json", timeout=20)
     out["checks"].append({"name": "usb_list", "ok": p.returncode == 0, "rc": p.returncode, "stderr": p.stderr.strip()})
     found = resource in p.stdout
+    ids = _resource_ids(resource)
+    if not found and ids and p.returncode == 0:
+        try:
+            import json as _json
+            devs = _json.loads(p.stdout)
+            vid, pid = ids
+            found = any(int(d.get("id", {}).get("vendor", -1)) == vid and int(d.get("id", {}).get("product", -1)) == pid for d in devs)
+        except Exception:
+            pass
     out["checks"].append({"name": "resource_visible", "ok": found, "detail": resource})
     if not found:
         out["ok"] = False
