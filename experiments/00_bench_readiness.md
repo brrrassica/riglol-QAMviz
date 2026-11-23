@@ -20,7 +20,7 @@ git tag --contains f1cb86f
 
 - **ESP32, Chip Rev >= 1.0** (`esp_chip_info_t.revision >= 100`). Current sketches guard for revision `100`.
 - **Rigol DS1054Z** (DS1000Z family), USBTMC `1AB1:04CE`.
-- **NanoVNA-H with NanoVNAUSBFix USBTMC/SCPI image**, USB `0483:5740` (optional for later milestones).
+- **NanoVNA-H with [NanoVNAUSBFix](https://github.com/acabtech/NanoVNAUSBFix) USBTMC/SCPI image**, USB `0483:5740` (optional for later milestones).
 - **Common ground** between ESP32 and scope.
 
 ## Wiring

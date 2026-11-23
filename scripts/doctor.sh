@@ -43,7 +43,7 @@ echo "  riglol scpi --usb usb:0x1AB1:0x04CE '*IDN?'"
 echo "  riglol scpi --usb usb:0x0483:0x5740 '*IDN?'"
 echo
 echo "== USB permissions =="
-echo "If USB access fails, install omariglol/NanoVNAUSBFix udev rules and replug devices."
+echo "If USB access fails, install omariglol/NanoVNAUSBFix udev rules and replug devices. See https://github.com/acabtech/NanoVNAUSBFix"
 echo "Do not use sudo for normal captures."
 echo
 echo "== Release gate =="

@@ -24,7 +24,7 @@ This repo contains the firmware and bench evidence for generating **16-QAM, 64-Q
 |---|---|
 | ESP32 | ESP32 with Chip Rev >= 1.0 (`esp_chip_info_t.revision >= 100`), internal 8-bit DACs, USB-UART |
 | Scope | Rigol DS1054Z (or compatible DS1000Z), USBTMC `1AB1:04CE` |
-| VNA | NanoVNA-H with NanoVNAUSBFix USBTMC/SCPI image, `0483:5740` (planned) |
+| VNA | NanoVNA-H with [NanoVNAUSBFix](https://github.com/acabtech/NanoVNAUSBFix) USBTMC/SCPI image, `0483:5740` (planned) |
 | Host | Linux, `arduino-cli` + ESP32 core 3.3.12, `omariglol`/`riglol` |
 
 The firmware expects ESP32 **Chip Rev >= 1.0** (`esp_chip_info_t.revision >= 100`). Current sketches guard for revision `100`; adjust the guard only if you have validated another compatible revision.
