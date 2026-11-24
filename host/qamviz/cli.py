@@ -45,9 +45,13 @@ def _maybe_esp32_status(port: str | None):
 def cmd_capture(args):
     preset = get_preset(args.preset)
     preset.resource = args.resource
-    if args.points:
+    if args.points is not None:
+        if args.points <= 0:
+            raise SystemExit(f"error: --points must be > 0, got {args.points}")
         preset.points = args.points
-    if args.sps:
+    if args.sps is not None:
+        if args.sps < 1:
+            raise SystemExit(f"error: --sps must be >= 1, got {args.sps}")
         preset.sps = args.sps
     if args.seed is not None:
         preset.seed = args.seed
