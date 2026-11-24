@@ -46,6 +46,8 @@ def _best_phase(symn: np.ndarray, ideal: np.ndarray) -> tuple[np.ndarray, float]
 
 
 def sample_symbols(z: np.ndarray, sps: int = 8, modulation: str = "qam16", shape: str = "rect") -> np.ndarray:
+    if sps < 1:
+        raise ValueError(f"sps must be >= 1, got {sps}")
     zf = matched_filter(z, sps=sps, shape=shape)
     ideal = ideal_for(modulation)
     best = None
@@ -72,6 +74,8 @@ def sync_and_sample(z: np.ndarray, sps: int = 8, modulation: str = "qam16", seed
     Searches a 32-symbol window over the full 1024-symbol generated TX sequence,
     so alignment works even when the training burst is not in the capture.
     """
+    if sps < 1:
+        raise ValueError(f"sps must be >= 1, got {sps}")
     zf = matched_filter(z, sps=sps, shape=shape)
     ideal = ideal_for(modulation)
     tx = generate_symbols(modulation=modulation, seed=seed, n_symbols=1024)
