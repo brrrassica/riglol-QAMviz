@@ -47,9 +47,31 @@ if command -v arduino-cli >/dev/null 2>&1; then
 else
   echo "arduino-cli not found"
 fi
-if [[ -x "/tmp/opencode/qamviz-venv/bin/python" ]]; then
-  /tmp/opencode/qamviz-venv/bin/python --version 2>&1 || true
-  /tmp/opencode/qamviz-venv/bin/python -c "import numpy,matplotlib,serial,fastapi,uvicorn; print('qamviz venv deps: ok')" 2>&1 || true
+QAMVIZ_PYTHON_BIN=""
+if [[ -n "${QAMVIZ_PYTHON:-}" ]]; then
+  if [[ -x "$QAMVIZ_PYTHON" ]]; then
+    QAMVIZ_PYTHON_BIN="$QAMVIZ_PYTHON"
+  else
+    echo "QAMVIZ_PYTHON is set but not executable: $QAMVIZ_PYTHON"
+  fi
+fi
+if [[ -z "$QAMVIZ_PYTHON_BIN" && -n "${VIRTUAL_ENV:-}" && -x "$VIRTUAL_ENV/bin/python" ]]; then
+  QAMVIZ_PYTHON_BIN="$VIRTUAL_ENV/bin/python"
+fi
+if [[ -z "$QAMVIZ_PYTHON_BIN" ]]; then
+  for candidate in python3 python; do
+    if command -v "$candidate" >/dev/null 2>&1; then
+      QAMVIZ_PYTHON_BIN="$(command -v "$candidate")"
+      break
+    fi
+  done
+fi
+if [[ -n "$QAMVIZ_PYTHON_BIN" ]]; then
+  echo "python: $QAMVIZ_PYTHON_BIN"
+  "$QAMVIZ_PYTHON_BIN" --version 2>&1 || true
+  "$QAMVIZ_PYTHON_BIN" -c "import numpy,matplotlib,serial,fastapi,uvicorn; print('qamviz deps: ok')" 2>&1 || true
+else
+  echo "python not found; set QAMVIZ_PYTHON=/path/to/python"
 fi
 echo
 
