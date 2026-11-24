@@ -81,16 +81,22 @@ $RIG scpi --usb --timeout 10 "$A" ':DISP:CLE'
 $RIG scpi --usb --timeout 10 "$A" ':RUN'
 ```
 
-For a crisp still capture, clear then stop:
+For a still capture, **grab the screenshot while the scope is running** — do **not** press STOP first:
 
 ```bash
 $RIG scpi --usb --timeout 10 "$A" ':DISP:CLE'
 $RIG scpi --usb --timeout 10 "$A" ':RUN'
-sleep 0.5
-$RIG scpi --usb --timeout 10 "$A" ':STOP'
-$RIG screenshot --usb --timeout 25 --command ':DISP:DATA? ON,OFF,PNG' "$A" /tmp/qam.png
-$RIG scpi --usb --timeout 10 "$A" ':RUN'
+sleep 5   # let the constellation paint
+$RIG scpi --usb --timeout 10 --hex "$A" ':DISP:DATA? ON,OFF' > /tmp/qam.hex
+# decode the IEEE BMP block to PNG (see host/qamviz helpers)
 ```
+
+> **Important (DS1054Z X-Y quirk):** pressing STOP in X-Y mode collapses the display to the
+> points of the last acquisition — the accumulated constellation vanishes (verified repeatedly:
+> STOP always leaves a single dot group). X-Y has no frame sync and no true variable persistence,
+> so there is nothing to freeze. `:DISP:DATA?` returns a BMP snapshot of the *live* display,
+> which is why captures must be taken while the scope is still running. This supersedes the
+> earlier "clear then stop" advice.
 
 ## Signal model
 
@@ -117,7 +123,7 @@ code = clamp(round(128 + gain * 127 * sample), 0, 255)
 
 ## Known issues / observations
 
-- **DS1054Z X-Y smear**: X-Y has no frame sync and no true variable persistence. Free-running DAC repainting causes blur/smear. Use `DOTS`, `:DISP:CLE`, brief `:RUN`, then `:STOP` for crisp captures.
+- **DS1054Z X-Y smear**: X-Y has no frame sync and no true variable persistence. Free-running DAC repainting causes blur/smear. Use `DOTS`, `:DISP:CLE`, brief `:RUN`, then grab the screenshot **while still running** — pressing STOP collapses the X-Y display to one acquisition's points (single dot group).
 - **omariglol USBTMC screenshot corruption**: `riglol screenshot --usb` on DS1054Z can produce PNGs with corrupted IDAT/zlib tail; salvage by decompressing partial IDAT and rewriting PNG chunks.
 - **`riglol scpi --usb ':AUT'`** leaves DS1054Z stopped; follow with `:RUN` or use `riglol autoscale`.
 - **256-QAM full-coverage buffer**: a 256-symbol full-coverage cyclic buffer experiment caused display issues and was rolled back; current 256-QAM uses a PRNG 128-symbol buffer.

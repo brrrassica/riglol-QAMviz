@@ -1,0 +1,27 @@
+{
+  "source": "CHAN2",
+  "mode": "raw",
+  "format": "word",
+  "points": 120000,
+  "chunks": 1,
+  "columns": [
+    "time_s",
+    "voltage_v"
+  ],
+  "units": [
+    "s",
+    "V"
+  ],
+  "preamble": {
+    "format_code": 1,
+    "type_code": 2,
+    "points": 120000,
+    "count": 1,
+    "x_increment": 2e-9,
+    "x_origin": -0.00012,
+    "x_reference": 0.0,
+    "y_increment": 0.002039062,
+    "y_origin": -450.0,
+    "y_reference": 124.0
+  }
+}

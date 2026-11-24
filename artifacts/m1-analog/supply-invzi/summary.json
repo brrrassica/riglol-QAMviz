@@ -1,0 +1,20 @@
+{
+  "date_utc": "2026-11-23",
+  "supply": "Invzi power brick (replaces USB-port 5V)",
+  "setup": {
+    "ch1": "5V input (probe 10X, AC)",
+    "ch2": "3V3 rail (probe 10X, AC)",
+    "fast_capture": "20us/div, norm mode, 1200 pts",
+    "note": "1ms/div and RAW captures during the session were affected by a wedged USBTMC state and stale STOP memory; fast norm capture is the authoritative number"
+  },
+  "measure_all": {
+    "vbus_5v": { "vpp": 0.02, "vrms": 0.0006 },
+    "rail_3v3": { "vpp": 0.02, "vrms": 0.0006 }
+  },
+  "comparison": {
+    "before_usb_port": { "vbus_vpp": 1.2, "rail_3v3_vpp": 0.868, "dominant": "50 kHz switching ripple" },
+    "after_invzi": { "vpp_both_rails": 0.02, "dominant": "~100 Hz residual, common-mode/probe-artifact level" }
+  },
+  "verdict": "Invzi brick is clean enough: ~40x reduction in rail ripple (0.87 Vpp -> ~20 mVpp on 3V3). No 50 kHz component detected. DAC reference (VDD3P3) modulation is now negligible at scope resolution.",
+  "xy_capture": "artifacts/m1-analog/xy-invzi.png — full 4x4 16-QAM constellation, all 16 clusters visible and tighter than the USB-supply capture (xy-dots.png); residual intra-cluster streaking reduced"
+}
