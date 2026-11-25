@@ -75,9 +75,9 @@ static bool build_buffer(const QamConfig &cfg) {
   const bool is_rrc = strcmp(cfg.shape, "rrc") == 0;
 
   // Precompute symbol normalized I/Q.
-  float symI[256];
-  float symQ[256];
-  const size_t maxSym = symbols < 256 ? symbols : 256;
+  static float symI[sizeof(g_buf) / 2];
+  static float symQ[sizeof(g_buf) / 2];
+  const size_t maxSym = symbols;
   Prbs7 prbs((uint8_t)(cfg.seed ? (cfg.seed & 0x7F) : 0x7F));
   for (size_t s = 0; s < maxSym; ++s) {
     IqCode c = symbol_to_codes(cfg, (uint16_t)s, prbs);
