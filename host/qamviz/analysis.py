@@ -80,6 +80,10 @@ def sync_and_sample(z: np.ndarray, sps: int = 8, modulation: str = "qam16", seed
     ideal = ideal_for(modulation)
     tx = generate_symbols(modulation=modulation, seed=seed, n_symbols=1024)
     win_len = 32
+    # Precompute normalized cyclic templates for all 1024 frame positions.
+    idx = (np.arange(1024)[:, None] + np.arange(win_len)[None, :]) % 1024
+    tpl_mat = tx[idx]
+    tpl_mat = tpl_mat / (np.linalg.norm(tpl_mat, axis=1, keepdims=True) + 1e-12)
     best = {"score": -1e18, "offset": 0, "start": 0, "frame_pos": 0, "method": "blind"}
 
     for off in range(max(1, sps)):
@@ -90,14 +94,12 @@ def sync_and_sample(z: np.ndarray, sps: int = 8, modulation: str = "qam16", seed
         symn, _ = _best_phase(symn, ideal)
         for start in range(0, len(symn) - win_len + 1):
             win = symn[start:start + win_len]
-            denom = (np.linalg.norm(win) + 1e-12)
-            # Search all possible frame positions for this window.
-            for frame_pos in range(1024):
-                tpl = tx[np.arange(frame_pos, frame_pos + win_len) % 1024]
-                tpl_n = tpl / (np.linalg.norm(tpl) + 1e-12)
-                score = float(np.real(np.vdot(win / denom, tpl_n)))
-                if score > best["score"]:
-                    best = {"score": score, "offset": off, "start": start, "frame_pos": frame_pos, "method": "sequence_corr"}
+            denom = np.linalg.norm(win) + 1e-12
+            scores = np.real(tpl_mat.conj() @ (win / denom))
+            frame_pos = int(np.argmax(scores))
+            score = float(scores[frame_pos])
+            if score > best["score"]:
+                best = {"score": score, "offset": off, "start": start, "frame_pos": frame_pos, "method": "sequence_corr"}
 
     if best["method"] == "sequence_corr" and best["score"] > 0.6:
         off, start, frame_pos = best["offset"], best["start"], best["frame_pos"]
