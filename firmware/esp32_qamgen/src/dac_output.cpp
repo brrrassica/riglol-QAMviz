@@ -69,35 +69,30 @@ static float rrc_tap(float t, float beta) {
 }
 
 static bool build_buffer(const QamConfig &cfg) {
-  const uint32_t sps = cfg.sps ? cfg.sps : 8;
+  QamConfig scfg = cfg;
+  if (!(scfg.gain > 0.0f) || scfg.gain > 1.0f) scfg.gain = 0.8f;
+  const uint32_t sps = scfg.sps ? scfg.sps : 8;
   const size_t symbols = (sizeof(g_buf) / 2) / sps;
   g_buf_bytes = symbols * sps * 2;
-  const bool is_rrc = strcmp(cfg.shape, "rrc") == 0;
+  const bool is_rrc = strcmp(scfg.shape, "rrc") == 0;
 
   // Precompute symbol normalized I/Q.
   static float symI[sizeof(g_buf) / 2];
   static float symQ[sizeof(g_buf) / 2];
   const size_t maxSym = symbols;
-  Prbs7 prbs((uint8_t)(cfg.seed ? (cfg.seed & 0x7F) : 0x7F));
+  Prbs7 prbs((uint8_t)(scfg.seed ? (scfg.seed & 0x7F) : 0x7F));
   for (size_t s = 0; s < maxSym; ++s) {
-    IqCode c = symbol_to_codes(cfg, (uint16_t)s, prbs);
+    IqCode c = symbol_to_codes(scfg, (uint16_t)s, prbs);
     // Convert DAC code back to normalized-ish float around 0 for shaping, then re-map.
-    symI[s] = ((float)c.i - 128.0f) / (127.0f * cfg.gain);
-    symQ[s] = ((float)c.q - 128.0f) / (127.0f * cfg.gain);
-  }
-
-  if (!is_rrc) {
-    for (size_t s = 0; s < maxSym; ++s) {
-      // Rectangular: use original DAC codes for exact mapping.
-      // Recompute to avoid float round-trip drift.
-    }
+    symI[s] = ((float)c.i - 128.0f) / (127.0f * scfg.gain);
+    symQ[s] = ((float)c.q - 128.0f) / (127.0f * scfg.gain);
   }
 
   if (!is_rrc) {
     // Rectangular path (original behavior).
-    Prbs7 prbs2((uint8_t)(cfg.seed ? (cfg.seed & 0x7F) : 0x7F));
+    Prbs7 prbs2((uint8_t)(scfg.seed ? (scfg.seed & 0x7F) : 0x7F));
     for (size_t s = 0; s < symbols; ++s) {
-      IqCode c = symbol_to_codes(cfg, (uint16_t)s, prbs2);
+      IqCode c = symbol_to_codes(scfg, (uint16_t)s, prbs2);
       for (uint32_t k = 0; k < sps; ++k) {
         size_t idx = (s * sps + k) * 2;
         g_buf[idx + 0] = c.i;
@@ -139,8 +134,8 @@ static bool build_buffer(const QamConfig &cfg) {
         yi += symI[ss] * tap;
         yq += symQ[ss] * tap;
       }
-      float vi = 128.0f + 127.0f * cfg.gain * yi;
-      float vq = 128.0f + 127.0f * cfg.gain * yq;
+      float vi = 128.0f + 127.0f * scfg.gain * yi;
+      float vq = 128.0f + 127.0f * scfg.gain * yq;
       if (vi < 0) vi = 0; if (vi > 255) vi = 255;
       if (vq < 0) vq = 0; if (vq > 255) vq = 255;
       size_t idx = (s * sps + k) * 2;

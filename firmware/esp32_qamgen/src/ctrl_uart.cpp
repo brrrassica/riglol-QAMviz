@@ -89,7 +89,7 @@ void ctrl_uart_poll(QamConfig &active, QamConfig &pending, bool &pendingValid) {
         json_get_float(s, "gain", c.gain);
         if (c.sps == 0) c.sps = 8;
         if (c.symbol_rate == 0) c.symbol_rate = 20000;
-        if (c.gain <= 0 || c.gain > 1.0f) c.gain = 0.8f;
+        if (!(c.gain > 0.0f) || c.gain > 1.0f) c.gain = 0.8f;
         pending = c;
         pendingValid = true;
         emit_ok("configure", "pending config stored; apply with start/restart");
