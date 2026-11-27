@@ -10,7 +10,7 @@ static uint8_t code_from_norm(float x, float gain) {
 }
 
 static int pam4_gray_to_level(uint8_t g2) {
-  static const int levels[4] = {-3, -1, 3, 1}; // 00,01,11,10
+  static const int levels[4] = {-3, -1, 1, 3}; // 00,01,11,10
   return levels[g2 & 0x3];
 }
 
@@ -63,6 +63,13 @@ bool qam_selftest(char *out, size_t outLen) {
   IqCode c16_ff = qam16_map(0xF, 0.8f);
   bool ok16 = (c16_00.i < 128 && c16_00.q < 128 && c16_ff.i > 128 && c16_ff.q > 128 &&
                c16_00.i == c16_00.q && c16_ff.i == c16_ff.q);
+  // PAM4 Gray adjacency: single-bit Gray step must map to one PAM level step.
+  IqCode c16_01 = qam16_map(0x1, 0.8f); // 0001: I=00, Q=01
+  IqCode c16_03 = qam16_map(0x3, 0.8f); // 0011: I=00, Q=11
+  int step_q = (int)c16_03.q - (int)c16_01.q;
+  int step_i = (int)c16_03.i - (int)c16_01.i;
+  bool ok16_gray = (step_i == 0) && (step_q > 30) && (step_q < 90);
+  ok16 = ok16 && ok16_gray;
 
   // 64-QAM known vectors: 000,000 => -7,-7; 111,111 => +7,+7 (Gray mapping)
   IqCode c64_00 = qam64_map(0x00, 0.8f);

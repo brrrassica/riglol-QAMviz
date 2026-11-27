@@ -24,7 +24,7 @@ class Prbs7:
 
 
 def _pam4_gray_to_level(g2: int) -> int:
-    levels = [-3, -1, 3, 1]  # 00,01,11,10
+    levels = [-3, -1, 1, 3]  # 00,01,11,10
     return levels[g2 & 0x3]
 
 
